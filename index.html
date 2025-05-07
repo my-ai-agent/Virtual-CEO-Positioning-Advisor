@@ -3,47 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual CEO Positioning Advisor</title>
+    <title>Virtual CEO Positioning Statement Analyzer</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="header">
-        <h1>Virtual CEO Positioning Advisor</h1>
-    </div>
+    <div class="header">Virtual CEO Positioning Advisor</div>
+    
     <div class="container">
-        <h2>Strategic Positioning Assessment</h2>
-        <p class="subtitle">Transform your website messaging to connect with female decision-makers</p>
+        <div class="title">Strategic Positioning Assessment</div>
+        <div class="subtitle">Transform your website messaging to connect with female decision-makers</div>
         
-        <form id="positioningForm">
-            <div class="form-group">
-                <label for="websiteContent">Paste your website landing page content here:</label>
-                <textarea id="websiteContent" rows="8" required></textarea>
+        <form id="assessmentForm">
+            <div class="form-section">
+                <label class="input-label" for="industrySelect">Select your industry: <span class="required-indicator">*</span></label>
+                <select class="industry-select" id="industrySelect" required>
+                    <option value="">-- Select industry --</option>
+                    <optgroup label="Tourism">
+                        <option value="tourism_adventure">Adventure Activity</option>
+                        <option value="tourism_cultural">Cultural Tours</option>
+                        <option value="tourism_ecotourism">Ecotourism</option>
+                        <option value="tourism_luxury">Luxury Tourism</option>
+                    </optgroup>
+                    <optgroup label="Hospitality">
+                        <option value="hospitality_accommodation">Accommodation</option>
+                        <option value="hospitality_restaurant">Restaurant/Café</option>
+                        <option value="hospitality_events">Events & Conferences</option>
+                    </optgroup>
+                    <optgroup label="Retail">
+                        <option value="retail_gifts">Retail/Gifts</option>
+                        <option value="retail_crafts">Crafts & Artisan Products</option>
+                        <option value="retail_local">Local Products</option>
+                    </optgroup>
+                    <optgroup label="Other">
+                        <option value="other_cultural">Cultural Institution</option>
+                        <option value="other_education">Educational Services</option>
+                        <option value="other_wellness">Health & Wellness</option>
+                        <option value="other">Other</option>
+                    </optgroup>
+                </select>
             </div>
             
-            <div class="form-group">
-                <label for="policyFile">Optional: Upload Cultural or Environmental Policy</label>
+            <div class="form-section">
+                <label class="input-label">Select all target audiences you currently market to: <span class="required-indicator">*</span></label>
+                <div class="checkbox-container">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="target_female_professionals" value="Female Professionals">
+                        <label for="target_female_professionals">Female Professionals</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="target_female_groups" value="Female Travel Groups">
+                        <label for="target_female_groups">Female Travel Groups</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="target_families" value="Families">
+                        <label for="target_families">Families</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="target_couples" value="Couples">
+                        <label for="target_couples">Couples</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="target_seniors" value="Seniors">
+                        <label for="target_seniors">Seniors</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="target_millennials" value="Millennials & Gen Z">
+                        <label for="target_millennials">Millennials & Gen Z</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="target_international" value="International Visitors">
+                        <label for="target_international">International Visitors</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="target_domestic" value="Domestic Travelers">
+                        <label for="target_domestic">Domestic Travelers</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="target_cultural" value="Cultural Experience Seekers">
+                        <label for="target_cultural">Cultural Experience Seekers</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="target_luxury" value="Luxury Travelers">
+                        <label for="target_luxury">Luxury Travelers</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="target_other" value="Other">
+                        <label for="target_other">Other</label>
+                    </div>
+                </div>
+                
+                <div id="otherTargetContainer" style="display: none; margin-top: 15px;">
+                    <label class="input-label" for="otherTarget">Please specify:</label>
+                    <input type="text" class="input-field" id="otherTarget" placeholder="Describe your other target audience">
+                </div>
+                
+                <div id="selectedTargetsContainer" class="current-targets" style="display: none;">
+                    <div class="current-targets-title">Your selected target audiences:</div>
+                    <div id="selectedTargets"></div>
+                </div>
+                
+                <div id="focusNotice" class="focus-notice" style="display: none;">
+                    <strong>Positioning Insight:</strong> You're currently targeting multiple audience segments. While this is common, a more focused approach typically yields better results. The next section will help you identify which segment to prioritize for this positioning exercise.
+                </div>
+                
+                <div id="primaryTargetContainer" class="primary-target-box" style="display: none;">
+                    <div class="primary-target-title">Select your PRIMARY target audience for this positioning exercise: <span class="required-indicator">*</span></div>
+                    <select id="primaryTargetSelect" class="primary-target-select" required>
+                        <option value="">-- Select primary audience --</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <label class="input-label" for="currentPositioning">Enter your current positioning statement: <span class="required-indicator">*</span></label>
+                <textarea class="textarea" id="currentPositioning" placeholder="E.g., DISCOVER NEW ZEALAND'S MOST ACTIVE GEOTHERMAL GEYSERS, AND SO MUCH MORE..." required></textarea>
+            </div>
+            
+            <div class="form-section">
+                <label class="input-label">Upload a screenshot of your website landing page: <span class="required-indicator">*</span></label>
+                <div id="dropArea" class="image-upload-area">
+                    <p>Drop image here or click to upload</p>
+                    <p class="instructions">You can also paste (Ctrl+V) a screenshot directly</p>
+                    <img id="imagePreview" class="image-preview" alt="Image preview">
+                    <input type="file" id="imageUpload" class="hidden-file-input" accept="image/*" required>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <label class="file-input-label">Optional: Upload Cultural or Environmental Policy</label>
                 <div class="file-input-container">
-                    <input type="file" id="policyFile">
-                    <button type="button" id="fileButton" class="file-button">Choose File</button>
+                    <input type="file" id="policyFile" name="policyFile">
+                    <button type="button" id="fileButton">Choose File</button>
                     <span id="fileName">No file chosen</span>
                 </div>
             </div>
             
-            <div class="button-container">
-                <button type="submit" class="submit-button">Get Virtual CEO Insights</button>
-            </div>
+            <button type="submit" class="submit-btn">Get Virtual CEO Insights</button>
         </form>
         
-        <div id="resultContainer" class="result-box hidden">
-            <h3>Your Positioning Statement:</h3>
-            <div id="positioningResult"></div>
-            <div class="loading-indicator hidden" id="loadingIndicator">
-                <div class="spinner"></div>
-                <p>Your Virtual CEO is analyzing your content...</p>
+        <div id="resultBox" class="result-box">
+            <div class="result-title">Recommended Positioning Statements:</div>
+            
+            <div class="positioning-option">
+                <h3>Option 1: Emotional Connection</h3>
+                <div id="newPositioning1" class="positioning-statement"></div>
+                <div class="option-analysis">
+                    <h4>Why this works:</h4>
+                    <ul id="analysisList1" class="analysis-list"></ul>
+                </div>
             </div>
+            
+            <div class="positioning-option">
+                <h3>Option 2: Authentic Experience</h3>
+                <div id="newPositioning2" class="positioning-statement"></div>
+                <div class="option-analysis">
+                    <h4>Why this works:</h4>
+                    <ul id="analysisList2" class="analysis-list"></ul>
+                </div>
+            </div>
+            
+            <div class="positioning-option">
+                <h3>Option 3: Transformative Journey</h3>
+                <div id="newPositioning3" class="positioning-statement"></div>
+                <div class="option-analysis">
+                    <h4>Why this works:</h4>
+                    <ul id="analysisList3" class="analysis-list"></ul>
+                </div>
+            </div>
+            
+            <div class="result-title">Implementation recommendation:</div>
+            <div id="recommendation" class="recommendation"></div>
         </div>
         
-        <p class="footer">© Michael Gibbons: Virtual CEO: Cultural Tourism AI Transformation Strategist 2025</p>
+        <div class="footer">
+            © Michael Gibbons: Virtual CEO: Cultural Tourism AI Transformation Strategist 2025
+        </div>
     </div>
 
     <script src="script.js"></script>
