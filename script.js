@@ -493,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ]
                 });
                 
-                recommendation = "These positioning statements acknowledge different aspects of what " + targetAudience + " value in accommodation. The first focuses on strategic convenience, the second on authentic luxury, and the third on insider access. Consider which positioning best aligns with both your offering anrecommendation = "These positioning statements acknowledge different aspects of what " + targetAudience + " value in accommodation. The first focuses on strategic convenience, the second on authentic luxury, and the third on insider access. Consider which positioning best aligns with both your offering and the specific preferences of your target audience segment.";
+                recommendation = "These positioning statements acknowledge different aspects of what " + targetAudience + " value in accommodation. The first focuses on strategic convenience, the second on authentic luxury, and the third on insider access. Consider which positioning best aligns with both your offering and recommendation = "These positioning statements acknowledge different aspects of what " + targetAudience + " value in accommodation. The first focuses on strategic convenience, the second on authentic luxury, and the third on insider access. Consider which positioning best aligns with both your offering and the specific preferences of your target audience segment.";
             }
         }
         else if (industry.startsWith('retail')) {
