@@ -1017,3 +1017,79 @@ function refreshPrimaryTargetDropdown() {
         document.getElementById('primaryTargetContainer').style.display = 'none';
     }
 }
+// Form Submission Fix - Add this to your script.js file
+// This should be added near the beginning of your DOMContentLoaded event
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Find the form and add a submit event handler
+    const assessmentForm = document.getElementById('assessmentForm');
+    
+    if (assessmentForm) {
+        assessmentForm.addEventListener('submit', function(event) {
+            // Prevent the default form submission
+            event.preventDefault();
+            
+            // Get form data
+            const industry = document.getElementById('industrySelect').value;
+            const primaryTarget = document.getElementById('primaryTargetSelect').value;
+            const currentPositioning = document.getElementById('currentPositioning').value;
+            
+            // Validate form data
+            if (!industry) {
+                alert('Please select an industry');
+                return;
+            }
+            
+            if (!primaryTarget) {
+                alert('Please select a primary target audience');
+                return;
+            }
+            
+            if (!currentPositioning) {
+                alert('Please enter your current positioning statement');
+                return;
+            }
+            
+            // Generate results - call your existing function
+            const results = generateResults(industry, primaryTarget, currentPositioning);
+            
+            // Display results - call your existing function 
+            displayResults(results);
+            
+            // Show results section
+            const resultBox = document.getElementById('resultBox');
+            if (resultBox) {
+                resultBox.style.display = 'block';
+                // Scroll to results
+                resultBox.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    }
+    
+    // Add a function to check if the results are showing
+    function checkResults() {
+        const resultBox = document.getElementById('resultBox');
+        if (resultBox && getComputedStyle(resultBox).display === 'none') {
+            console.log("Results are not displaying - checking if submit button was clicked");
+            
+            // Find the submit button and add a direct click handler
+            const submitButton = document.querySelector('.submit-btn');
+            if (submitButton) {
+                submitButton.addEventListener('click', function(event) {
+                    console.log("Submit button clicked - manual trigger");
+                    event.preventDefault();
+                    
+                    // Manually trigger the form submission handler
+                    const formEvent = new Event('submit', { bubbles: true, cancelable: true });
+                    const form = document.getElementById('assessmentForm');
+                    if (form) {
+                        form.dispatchEvent(formEvent);
+                    }
+                });
+            }
+        }
+    }
+    
+    // Run the check after a short delay to ensure the page has loaded
+    setTimeout(checkResults, 1000);
+});
