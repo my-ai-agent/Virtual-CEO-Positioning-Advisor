@@ -862,3 +862,158 @@ function initializeUploads() {
         }
     });
 }
+// Add this function to your script.js file to specifically fix the primary target dropdown issue
+
+// Call this function immediately when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Fix for primary target dropdown
+    fixPrimaryTargetDropdown();
+});
+
+// Function to fix the primary target dropdown
+function fixPrimaryTargetDropdown() {
+    // Get all target audience checkboxes
+    const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]');
+    const primaryTargetSelect = document.getElementById('primaryTargetSelect');
+    const selectedTargetsContainer = document.getElementById('selectedTargetsContainer');
+    const selectedTargets = document.getElementById('selectedTargets');
+    const primaryTargetContainer = document.getElementById('primaryTargetContainer');
+    
+    // Enhanced update function for selected targets
+    function enhancedUpdateSelectedTargets() {
+        // Get all checked checkboxes
+        const checked = Array.from(checkboxes).filter(cb => cb.checked);
+        
+        if (checked.length > 0) {
+            // Show the containers
+            selectedTargetsContainer.style.display = 'block';
+            primaryTargetContainer.style.display = 'block';
+            
+            // Clear previous selections
+            selectedTargets.innerHTML = '';
+            primaryTargetSelect.innerHTML = '<option value="">Select primary target</option>';
+            
+            // Add each checked target to the display and dropdown
+            checked.forEach(cb => {
+                // For the list display
+                const targetName = cb.parentNode.querySelector('label').textContent.trim();
+                const li = document.createElement('li');
+                li.textContent = targetName;
+                selectedTargets.appendChild(li);
+                
+                // For the dropdown
+                const option = document.createElement('option');
+                option.value = targetName;
+                option.textContent = targetName;
+                primaryTargetSelect.appendChild(option);
+                
+                // Log to verify
+                console.log('Added target to dropdown:', targetName);
+            });
+            
+            // Add event listener to the primary target select
+            primaryTargetSelect.addEventListener('change', function() {
+                if (this.value) {
+                    // Remove any validation messages
+                    const validationMessage = document.querySelector('.validation-message');
+                    if (validationMessage) {
+                        validationMessage.remove();
+                    }
+                }
+            });
+        } else {
+            // Hide the containers if no targets selected
+            selectedTargetsContainer.style.display = 'none';
+            primaryTargetContainer.style.display = 'none';
+        }
+    }
+    
+    // Add event listeners to all checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', enhancedUpdateSelectedTargets);
+        
+        // If checkbox is already checked on page load, update the dropdown
+        if (checkbox.checked) {
+            // Force an update
+            enhancedUpdateSelectedTargets();
+        }
+    });
+    
+    // Check if any boxes are already checked and update
+    const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+    if (anyChecked) {
+        enhancedUpdateSelectedTargets();
+    }
+    
+    // One more check - directly scan for checked boxes
+    document.querySelectorAll('input[type="checkbox"]:checked').forEach(function(checkbox) {
+        console.log('Found checked box:', checkbox.id);
+    });
+    
+    // For the "Other" target option
+    const otherCheckbox = document.getElementById('target_other');
+    const otherTargetContainer = document.getElementById('otherTargetContainer');
+    const otherTargetInput = document.getElementById('otherTarget');
+    
+    if (otherCheckbox && otherTargetContainer && otherTargetInput) {
+        otherCheckbox.addEventListener('change', function() {
+            otherTargetContainer.style.display = this.checked ? 'block' : 'none';
+            if (this.checked) {
+                otherTargetInput.focus();
+                
+                // Add event listener to update the primary target with custom text
+                otherTargetInput.addEventListener('input', function() {
+                    // Find and update or create the "Other" option in the dropdown
+                    let otherOption = Array.from(primaryTargetSelect.options).find(opt => opt.value === 'Other' || opt.value === otherTargetInput.value);
+                    
+                    if (otherOption) {
+                        otherOption.value = otherTargetInput.value || 'Other';
+                        otherOption.textContent = otherTargetInput.value || 'Other';
+                    } else if (otherTargetInput.value) {
+                        // Create a new option
+                        const newOption = document.createElement('option');
+                        newOption.value = otherTargetInput.value;
+                        newOption.textContent = otherTargetInput.value;
+                        primaryTargetSelect.appendChild(newOption);
+                    }
+                });
+            }
+        });
+        
+        // Initialize if already checked
+        if (otherCheckbox.checked) {
+            otherTargetContainer.style.display = 'block';
+        }
+    }
+}
+
+// Call this function to force a refresh of the primary target dropdown
+function refreshPrimaryTargetDropdown() {
+    const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]');
+    const primaryTargetSelect = document.getElementById('primaryTargetSelect');
+    const selectedTargetsContainer = document.getElementById('selectedTargetsContainer');
+    
+    // Clear and rebuild the dropdown
+    primaryTargetSelect.innerHTML = '<option value="">Select primary target</option>';
+    
+    // Get checked checkboxes
+    const checked = Array.from(checkboxes).filter(cb => cb.checked);
+    
+    // Add each checked target to the dropdown
+    checked.forEach(cb => {
+        const targetName = cb.parentNode.querySelector('label').textContent.trim();
+        const option = document.createElement('option');
+        option.value = targetName;
+        option.textContent = targetName;
+        primaryTargetSelect.appendChild(option);
+    });
+    
+    // Show/hide containers based on checked status
+    if (checked.length > 0) {
+        selectedTargetsContainer.style.display = 'block';
+        document.getElementById('primaryTargetContainer').style.display = 'block';
+    } else {
+        selectedTargetsContainer.style.display = 'none';
+        document.getElementById('primaryTargetContainer').style.display = 'none';
+    }
+}
