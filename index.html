@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual CEO Positioning Advisor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Virtual CEO Positioning Advisor</h1>
+    </div>
+    <div class="container">
+        <h2>Strategic Positioning Assessment</h2>
+        <p class="subtitle">Transform your website messaging to connect with female decision-makers</p>
+        
+        <form id="positioningForm">
+            <div class="form-group">
+                <label for="websiteContent">Paste your website landing page content here:</label>
+                <textarea id="websiteContent" rows="8" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="policyFile">Optional: Upload Cultural or Environmental Policy</label>
+                <div class="file-input-container">
+                    <input type="file" id="policyFile">
+                    <button type="button" id="fileButton" class="file-button">Choose File</button>
+                    <span id="fileName">No file chosen</span>
+                </div>
+            </div>
+            
+            <div class="button-container">
+                <button type="submit" class="submit-button">Get Virtual CEO Insights</button>
+            </div>
+        </form>
+        
+        <div id="resultContainer" class="result-box hidden">
+            <h3>Your Positioning Statement:</h3>
+            <div id="positioningResult"></div>
+            <div class="loading-indicator hidden" id="loadingIndicator">
+                <div class="spinner"></div>
+                <p>Your Virtual CEO is analyzing your content...</p>
+            </div>
+        </div>
+        
+        <p class="footer">© Michael Gibbons: Virtual CEO: Cultural Tourism AI Transformation Strategist 2025</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
