@@ -16,36 +16,47 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Enable textarea for pasting content
+    const websiteContent = document.getElementById('websiteContent');
+    // Make sure the textarea is properly accepting input
+    websiteContent.setAttribute('placeholder', 'Paste your website landing page content here...');
+    
     // Form submission handling
     const form = document.getElementById('positioningForm');
     const resultContainer = document.getElementById('resultContainer');
     const positioningResult = document.getElementById('positioningResult');
     const loadingIndicator = document.getElementById('loadingIndicator');
     
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Get website content
-        const websiteContent = document.getElementById('websiteContent').value;
-        
-        if (!websiteContent) {
-            alert('Please paste your website content');
-            return;
-        }
-        
-        // Show loading indicator
-        resultContainer.classList.remove('hidden');
-        loadingIndicator.classList.remove('hidden');
-        positioningResult.innerHTML = '';
-        
-        // In a real implementation, this would call an API
-        // For demo purposes, we'll simulate a response after a delay
-        setTimeout(function() {
-            const statement = generatePositioningStatement(websiteContent);
-            loadingIndicator.classList.add('hidden');
-            positioningResult.innerHTML = statement;
-        }, 2000);
-    });
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get website content
+            const content = websiteContent.value;
+            
+            if (!content) {
+                alert('Please paste your website content');
+                return;
+            }
+            
+            // Show loading indicator
+            resultContainer.classList.remove('hidden');
+            if (loadingIndicator) {
+                loadingIndicator.classList.remove('hidden');
+            }
+            positioningResult.innerHTML = '';
+            
+            // In a real implementation, this would call an API
+            // For demo purposes, we'll simulate a response after a delay
+            setTimeout(function() {
+                const statement = generatePositioningStatement(content);
+                if (loadingIndicator) {
+                    loadingIndicator.classList.add('hidden');
+                }
+                positioningResult.innerHTML = statement;
+            }, 2000);
+        });
+    }
     
     // Simulate positioning statement generation
     function generatePositioningStatement(content) {
