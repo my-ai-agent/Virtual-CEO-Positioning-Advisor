@@ -570,3 +570,295 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize any visible elements
     updateSelectedTargets();
 });
+
+// File Upload Fix - Add this to your existing script.js file
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all file upload areas in the document
+    setupFileUploads();
+
+    // Function to set up all file upload areas
+    function setupFileUploads() {
+        // Look for standard file inputs
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(setupStandardFileInput);
+
+        // Look for custom drop zones
+        const dropZones = document.querySelectorAll('.upload-zone, [data-upload="true"]');
+        dropZones.forEach(setupDropZone);
+    }
+
+    // Setup standard file input
+    function setupStandardFileInput(input) {
+        // Create a label for the file input if it doesn't exist
+        let label = document.querySelector(`label[for="${input.id}"]`);
+        if (!label && input.id) {
+            label = document.createElement('label');
+            label.setAttribute('for', input.id);
+            label.textContent = 'Choose File';
+            input.parentNode.insertBefore(label, input.nextSibling);
+        }
+
+        // Add change event to update the label with the selected filename
+        input.addEventListener('change', function() {
+            if (label) {
+                label.textContent = this.files.length > 0 ? 
+                    this.files[0].name : 
+                    'Choose File';
+            }
+            
+            // If there's a preview container nearby, show image preview
+            const previewContainer = input.closest('div').querySelector('.preview-container');
+            if (previewContainer && this.files.length > 0 && this.files[0].type.startsWith('image/')) {
+                showImagePreview(this.files[0], previewContainer);
+            }
+        });
+    }
+
+    // Setup drag and drop zone
+    function setupDropZone(dropZone) {
+        // Find the associated file input
+        let fileInput = dropZone.querySelector('input[type="file"]');
+        
+        // If no file input exists inside the drop zone, look for one referenced by for attribute
+        if (!fileInput && dropZone.hasAttribute('for')) {
+            fileInput = document.getElementById(dropZone.getAttribute('for'));
+        }
+        
+        // If still no file input, create one
+        if (!fileInput) {
+            fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.style.display = 'none';
+            dropZone.appendChild(fileInput);
+        }
+        
+        // Create a preview container if it doesn't exist
+        let previewContainer = dropZone.querySelector('.preview-container');
+        if (!previewContainer) {
+            previewContainer = document.createElement('div');
+            previewContainer.className = 'preview-container';
+            dropZone.appendChild(previewContainer);
+        }
+        
+        // Add click event to the drop zone
+        dropZone.addEventListener('click', function(e) {
+            // Avoid triggering click if they clicked on a button inside the drop zone
+            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A') {
+                fileInput.click();
+            }
+        });
+        
+        // Setup file input change event
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                handleFiles(this.files, dropZone, previewContainer);
+                
+                // Update any text that indicates no file chosen
+                const statusText = dropZone.querySelector('.upload-status, .file-name');
+                if (statusText) {
+                    statusText.textContent = this.files[0].name;
+                }
+            }
+        });
+        
+        // Setup drag and drop events
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        // Highlight drop zone when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, function() {
+                dropZone.classList.add('highlight');
+            }, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, function() {
+                dropZone.classList.remove('highlight');
+            }, false);
+        });
+        
+        // Handle dropped files
+        dropZone.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                fileInput.files = files; // This may not work in all browsers
+                
+                // Create a new FileList event for the file input (for compatibility)
+                const event = new Event('change', { bubbles: true });
+                fileInput.dispatchEvent(event);
+                
+                handleFiles(files, dropZone, previewContainer);
+            }
+        }, false);
+        
+        // Handle paste events for the entire document
+        document.addEventListener('paste', function(e) {
+            // Only process paste if dropZone is focused or active
+            if (document.activeElement === dropZone || dropZone.contains(document.activeElement)) {
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        const file = items[i].getAsFile();
+                        
+                        // Create a new FileList with this file
+                        const fileList = new DataTransfer();
+                        fileList.items.add(file);
+                        fileInput.files = fileList.files;
+                        
+                        // Trigger change event
+                        const event = new Event('change', { bubbles: true });
+                        fileInput.dispatchEvent(event);
+                        
+                        handleFiles([file], dropZone, previewContainer);
+                        break;
+                    }
+                }
+            }
+        });
+    }
+    
+    // Handle the files that were selected or dropped
+    function handleFiles(files, dropZone, previewContainer) {
+        for (let i = 0; i < files.length; i++) {
+            uploadFile(files[i], dropZone);
+            
+            // If it's an image, show a preview
+            if (files[i].type.startsWith('image/')) {
+                showImagePreview(files[i], previewContainer);
+            } else {
+                // For non-image files, show the filename
+                previewContainer.innerHTML = `
+                    <div class="file-preview">
+                        <div class="file-icon">📄</div>
+                        <div class="file-name">${files[i].name}</div>
+                    </div>
+                `;
+            }
+        }
+    }
+    
+    // Display image preview
+    function showImagePreview(file, previewContainer) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            previewContainer.innerHTML = `
+                <div class="image-preview">
+                    <img src="${e.target.result}" alt="Preview" />
+                    <div class="file-name">${file.name}</div>
+                </div>
+            `;
+        };
+        
+        reader.readAsDataURL(file);
+    }
+    
+    // Simulate file upload - replace with your actual upload function
+    function uploadFile(file, dropZone) {
+        // This is a placeholder for your actual file upload functionality
+        // In a real implementation, you would send the file to your server
+        
+        // For demonstration purposes, we'll just log the file info
+        console.log('File to upload:', file.name, file.size, file.type);
+        
+        // Update the dropZone to show upload is complete
+        const uploadButton = dropZone.querySelector('button.upload-button');
+        if (uploadButton) {
+            uploadButton.textContent = 'Upload Complete';
+            uploadButton.disabled = false;
+        }
+        
+        // Add a hidden input with the file path for form submission
+        // This is for demonstration only and won't work in production
+        // as browsers don't allow setting the value of file inputs for security reasons
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'uploadedFile';
+        hiddenInput.value = file.name; // In reality, this would be the server-side file path
+        dropZone.appendChild(hiddenInput);
+    }
+
+    // Add some basic styles for the upload areas
+    addUploadStyles();
+    
+    function addUploadStyles() {
+        // Only add styles if they don't already exist
+        if (!document.getElementById('upload-styles')) {
+            const styleSheet = document.createElement('style');
+            styleSheet.id = 'upload-styles';
+            styleSheet.textContent = `
+                .upload-zone, [data-upload="true"] {
+                    border: 2px dashed #ccc;
+                    border-radius: 4px;
+                    padding: 20px;
+                    text-align: center;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                }
+                
+                .upload-zone.highlight, [data-upload="true"].highlight {
+                    border-color: #3498db;
+                    background-color: rgba(52, 152, 219, 0.1);
+                }
+                
+                .preview-container {
+                    margin-top: 10px;
+                }
+                
+                .image-preview img {
+                    max-width: 100%;
+                    max-height: 200px;
+                    border-radius: 4px;
+                    margin-top: 10px;
+                }
+                
+                .file-preview {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-top: 10px;
+                }
+                
+                .file-icon {
+                    font-size: 24px;
+                    margin-right: 10px;
+                }
+                
+                .file-name {
+                    font-size: 14px;
+                    color: #333;
+                }
+            `;
+            document.head.appendChild(styleSheet);
+        }
+    }
+});
+
+// In case you need a function to initialize uploads after DOMContentLoaded
+function initializeUploads() {
+    // Create a new event and dispatch it
+    const event = new Event('uploadInit');
+    document.dispatchEvent(event);
+    
+    // Find all upload zones and activate them
+    const dropZones = document.querySelectorAll('.upload-zone, [data-upload="true"]');
+    dropZones.forEach(dropZone => {
+        // Trigger a click to activate the file input if needed
+        const fileInput = dropZone.querySelector('input[type="file"]');
+        if (fileInput) {
+            // Just a dummy event to ensure the listener is active
+            fileInput.dispatchEvent(new Event('activate'));
+        }
+    });
+}
