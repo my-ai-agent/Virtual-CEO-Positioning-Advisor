@@ -25,701 +25,548 @@ document.addEventListener('DOMContentLoaded', function() {
     const primaryTargetSelect = document.getElementById('primaryTargetSelect');
     
     // Handle checkbox changes
-    checkboxes.forEach(function(checkbox) {
+    checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateSelectedTargets);
-    });
-    
-    // Handle "Other" checkbox
-    document.getElementById('target_other').addEventListener('change', function() {
-        const otherContainer = document.getElementById('otherTargetContainer');
-        if (this.checked) {
-            otherContainer.style.display = 'block';
-            document.getElementById('otherTarget').setAttribute('required', 'required');
-        } else {
-            otherContainer.style.display = 'none';
-            document.getElementById('otherTarget').removeAttribute('required');
-        }
     });
     
     // Update selected targets display
     function updateSelectedTargets() {
-        // Clear current display
-        selectedTargets.innerHTML = '';
+        const checked = Array.from(checkboxes).filter(cb => cb.checked);
         
-        // Get all checked boxes
-        const checkedBoxes = Array.from(checkboxes).filter(box => box.checked);
-        
-        // If none are checked, hide the container
-        if (checkedBoxes.length === 0) {
-            selectedTargetsContainer.style.display = 'none';
-            focusNotice.style.display = 'none';
-            primaryTargetContainer.style.display = 'none';
-            return;
-        }
-        
-        // Show the container
-        selectedTargetsContainer.style.display = 'block';
-        
-        // Add pills for each selected target
-        checkedBoxes.forEach(box => {
-            let value = box.value;
-            
-            // Handle "Other" case
-            if (value === 'Other' && document.getElementById('otherTarget').value) {
-                value = document.getElementById('otherTarget').value;
-            }
-            
-            const pill = document.createElement('span');
-            pill.className = 'target-pill';
-            pill.innerHTML = value + ' <button type="button" data-id="' + box.id + '" aria-label="Remove ' + value + '">×</button>';
-            
-            // Add remove button functionality
-            pill.querySelector('button').addEventListener('click', function() {
-                document.getElementById(this.dataset.id).checked = false;
-                updateSelectedTargets();
-            });
-            
-            selectedTargets.appendChild(pill);
-        });
-        
-        // Show focus notice and primary target selector if more than 1 is selected
-        if (checkedBoxes.length > 1) {
-            focusNotice.style.display = 'block';
+        if (checked.length > 0) {
+            selectedTargetsContainer.style.display = 'block';
             primaryTargetContainer.style.display = 'block';
             
-            // Update primary target dropdown options
-            updatePrimaryTargetOptions(checkedBoxes);
+            // Clear previous selections
+            selectedTargets.innerHTML = '';
+            primaryTargetSelect.innerHTML = '<option value="">Select primary target</option>';
+            
+            // Add each checked target to the display
+            checked.forEach(cb => {
+                const targetName = cb.dataset.targetName;
+                const li = document.createElement('li');
+                li.textContent = targetName;
+                selectedTargets.appendChild(li);
+                
+                // Add to primary target dropdown
+                const option = document.createElement('option');
+                option.value = targetName;
+                option.textContent = targetName;
+                primaryTargetSelect.appendChild(option);
+            });
+            
+            // Show warning if more than 3 targets selected
+            if (checked.length > 3) {
+                focusNotice.style.display = 'block';
+            } else {
+                focusNotice.style.display = 'none';
+            }
         } else {
-            focusNotice.style.display = 'none';
+            selectedTargetsContainer.style.display = 'none';
             primaryTargetContainer.style.display = 'none';
+            focusNotice.style.display = 'none';
         }
     }
     
-    // Update primary target dropdown options
-    function updatePrimaryTargetOptions(checkedBoxes) {
-        // Clear current options (except the placeholder)
-        while (primaryTargetSelect.options.length > 1) {
-            primaryTargetSelect.remove(1);
-        }
-        
-        // Add an option for each checked box
-        checkedBoxes.forEach(box => {
-            let value = box.value;
-            
-            // Handle "Other" case
-            if (value === 'Other' && document.getElementById('otherTarget').value) {
-                value = document.getElementById('otherTarget').value;
-            }
-            
-            const option = document.createElement('option');
-            option.value = value;
-            option.textContent = value;
-            primaryTargetSelect.appendChild(option);
+    // Industry selection
+    const industrySelect = document.getElementById('industry');
+    const currentPositioningTextarea = document.getElementById('currentPositioning');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const generateButton = document.getElementById('generateButton');
+    
+    // Gender selection for personalized messaging
+    const genderOptions = document.querySelectorAll('input[name="gender"]');
+    let isFemaleTarget = false;
+    
+    genderOptions.forEach(option => {
+        option.addEventListener('change', function() {
+            isFemaleTarget = this.value === 'female';
         });
-    }
-    
-    // Update other target label when input changes
-    document.getElementById('otherTarget').addEventListener('input', function() {
-        if (document.getElementById('target_other').checked) {
-            updateSelectedTargets();
-        }
     });
     
-    // Image upload functionality
-    const dropArea = document.getElementById('dropArea');
-    const imageUpload = document.getElementById('imageUpload');
-    const imagePreview = document.getElementById('imagePreview');
-    
-    // Handle click on drop area
-    dropArea.addEventListener('click', function() {
-        imageUpload.click();
-    });
-    
-    // Handle file selection
-    imageUpload.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
-            handleImage(this.files[0]);
-        }
-    });
-    
-    // Handle drag and drop
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }, false);
-    });
-    
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropArea.addEventListener(eventName, function() {
-            dropArea.classList.add('highlight');
-        }, false);
-    });
-    
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, function() {
-            dropArea.classList.remove('highlight');
-        }, false);
-    });
-    
-    dropArea.addEventListener('drop', function(e) {
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            handleImage(e.dataTransfer.files[0]);
-        }
-    }, false);
-    
-    // Handle paste (for screenshots)
-    document.addEventListener('paste', function(e) {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    // Listen for generate button click
+    generateButton.addEventListener('click', function() {
+        const industry = industrySelect.value;
+        const currentPositioning = currentPositioningTextarea.value;
+        const primaryTarget = primaryTargetSelect.value;
         
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].type.indexOf('image') !== -1) {
-                const blob = items[i].getAsFile();
-                handleImage(blob);
-                break;
-            }
-        }
-    });
-    
-    function handleImage(file) {
-        if (!file.type.match('image.*')) {
-            alert('Please select an image file');
+        if (!industry) {
+            alert('Please select an industry');
             return;
         }
         
-        const reader = new FileReader();
+        if (!primaryTarget) {
+            alert('Please select at least one target audience and choose a primary target');
+            return;
+        }
         
-        reader.onload = function(e) {
-            imagePreview.src = e.target.result;
-            imagePreview.style.display = 'block';
-            dropArea.querySelector('p').style.display = 'none';
-            dropArea.querySelector('.instructions').style.display = 'none';
+        // Generate and display results
+        const results = generateResults(industry, primaryTarget, currentPositioning);
+        displayResults(results);
+        
+        // Show results section
+        resultsContainer.style.display = 'block';
+        
+        // Scroll to results
+        resultsContainer.scrollIntoView({ behavior: 'smooth' });
+    });
+    
+    // Results generation
+    function generateResults(industry, targetAudience, currentPositioning) {
+        const options = [];
+        let recommendation = '';
+        
+        // Common AI-powered benefits across industries
+        const aiPoweredBenefits = {
+            operations: [
+                "Reduce operational costs by 30% through automated scheduling and resource allocation",
+                "Decrease manual data entry by 85% with intelligent document processing",
+                "Improve staff utilization by 25% with AI-optimized workforce management"
+            ],
+            marketing: [
+                "Boost marketing ROI by 40% with personalized targeting and messaging",
+                "Increase conversion rates by 35% with predictive customer analytics",
+                "Enhance customer engagement by 60% through real-time personalization"
+            ],
+            experience: [
+                "Improve guest satisfaction ratings by 28% with personalized experiences",
+                "Reduce wait times by 45% with intelligent queue management",
+                "Increase repeat bookings by 32% with personalized follow-up communications"
+            ]
         };
         
-        reader.readAsDataURL(file);
-    }
-    
-    // Form submission
-    document.getElementById('assessmentForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const industry = document.getElementById('industrySelect').value;
-        const currentPositioning = document.getElementById('currentPositioning').value;
-        const imageUploaded = imagePreview.style.display !== 'none';
-        
-        // Get target audiences
-        const checkedBoxes = Array.from(checkboxes).filter(box => box.checked);
-        let primaryTarget;
-        
-        if (checkedBoxes.length === 0) {
-            alert('Please select at least one target audience');
-            return;
-        } else if (checkedBoxes.length === 1) {
-            primaryTarget = checkedBoxes[0].value;
-            if (primaryTarget === 'Other') {
-                primaryTarget = document.getElementById('otherTarget').value;
-            }
-        } else {
-            primaryTarget = primaryTargetSelect.value;
-            if (!primaryTarget) {
-                alert('Please select your primary target audience');
-                return;
-            }
-        }
-        
-        // Basic validation
-        if (industry === '') {
-            alert('Please select your industry');
-            return;
-        }
-        
-        if (currentPositioning === '') {
-            alert('Please enter your current positioning statement');
-            return;
-        }
-        
-        if (!imageUploaded) {
-            alert('Please upload a screenshot of your website landing page');
-            return;
-        }
-        
-        // Show results (in a real implementation, this would first send data to a server)
-        generateResults(industry, primaryTarget, currentPositioning);
-    });
-    
-    // Generate results (simulating AI processing)
-    function generateResults(industry, targetAudience, currentPositioning) {
-        let recommendation;
-        const options = [];
-        
-        // Target audience specific content
-        const isFemaleTarget = targetAudience.includes('Female');
-        
-        // Generate different positioning statements based on industry and target audience
-        if (industry.startsWith('tourism_cultural')) {
-            if (isFemaleTarget) {
-                // Option 1: Emotional Connection
-                options.push({
-                    title: "Emotional Connection",
-                    statement: "Walk alongside our Māori Kaitiaki (guardians) as they share ancient wisdom that reconnects you to the rhythms of land and spirit—a journey just for you.",
-                    analysis: [
-                        "Creating a personal invitation with 'walk alongside' language",
-                        "Highlighting authentic cultural connection with 'Māori Kaitiaki'",
-                        "Emphasizing personal transformation with 'reconnects you'",
-                        "Addressing the desire for meaningful 'me time' with 'a journey just for you'"
-                    ]
-                });
-                
-                // Option 2: Authentic Experience
-                options.push({
-                    title: "Authentic Experience",
-                    statement: "Experience the living traditions of Māori culture through the eyes of our Kaitiaki—where every story shared creates meaningful connections that stay with you long after you leave.",
-                    analysis: [
-                        "Using 'experience' language that resonates with female travelers",
-                        "Emphasizing authenticity with 'living traditions'",
-                        "Focusing on storytelling as a vehicle for connection",
-                        "Highlighting lasting impact with 'stay with you long after'"
-                    ]
-                });
-                
-                // Option 3: Transformative Journey
-                options.push({
-                    title: "Transformative Journey",
-                    statement: "Discover the wisdom of Te Ao Māori (the Māori worldview) in a journey that nurtures your spirit—where ancient traditions create space for reflection, connection, and personal growth.",
-                    analysis: [
-                        "Framing the experience as a voyage of discovery",
-                        "Using nurturing language with 'nurtures your spirit'",
-                        "Emphasizing self-development opportunities",
-                        "Balancing cultural learning with personal benefit"
-                    ]
-                });
-                
-                recommendation = "These positioning statements transform your standard experience description into emotional journeys that speak directly to women seeking meaningful travel experiences. Each option emphasizes different aspects—personal connection, authentic experience, and transformation. Consider testing these positioning statements on your website and social media to measure engagement from female visitors.";
+        // Accommodation Industry
+        if (industry.startsWith('accommodation')) {
+            // Option 1: Sustainable Sanctuary
+            options.push({
+                title: "Sustainable Sanctuary",
+                statement: "Experience accommodation that nurtures both you and the planet, where sustainability meets luxury without compromise.",
+                analysis: [
+                    "Addressing growing eco-conscious traveler segment",
+                    "Differentiating from standard accommodations with sustainability credentials",
+                    "Creating emotional connection through shared environmental values",
+                    "Appealing to the 73% of travelers willing to pay more for sustainable options"
+                ]
+            });
             
-            } else {
-                // Option 1: Educational Value
-                options.push({
-                    title: "Educational Value",
-                    statement: "Step into living history with our Māori Kaitiaki (guardians) who reveal ancient wisdom and traditions that will transform your understanding of New Zealand's cultural heritage.",
-                    analysis: [
-                        "Using active language with 'step into' that invites participation",
-                        "Emphasizing authenticity with 'living history' and 'Māori Kaitiaki'",
-                        "Highlighting educational value with 'reveal ancient wisdom'",
-                        "Promising transformation of understanding rather than just an activity"
-                    ]
-                });
-                
-                // Option 2: Authentic Immersion
-                options.push({
-                    title: "Authentic Immersion",
-                    statement: "Immerse yourself in the rich traditions of Māori culture—where our Kaitiaki reveal the sacred connections between people, land, and ancestry that have shaped New Zealand for centuries.",
-                    analysis: [
-                        "Emphasizing immersive experience with 'immerse yourself'",
-                        "Highlighting cultural depth with 'rich traditions'",
-                        "Focusing on connections between culture and environment",
-                        "Adding historical context with 'shaped New Zealand for centuries'"
-                    ]
-                });
-                
-                // Option 3: Exclusive Access
-                options.push({
-                    title: "Exclusive Access",
-                    statement: "Gain privileged insights into Māori culture through experiences not available to the independent traveler—where traditional knowledge keepers share the stories, skills, and traditions that define New Zealand's cultural identity.",
-                    analysis: [
-                        "Emphasizing exclusivity with 'privileged insights' and 'not available'",
-                        "Highlighting authenticity through 'traditional knowledge keepers'",
-                        "Offering comprehensive cultural content with 'stories, skills, and traditions'",
-                        "Connecting the experience to national identity"
-                    ]
-                });
-                
-                recommendation = "These positioning statements focus on different aspects of cultural tourism that resonate with " + targetAudience + ". The first emphasizes educational value, the second authentic immersion, and the third exclusive access. Consider using the language that best aligns with what your specific audience segment values most in cultural experiences.";
-            }
+            // Option 2: Home Away from Home
+            options.push({
+                title: "Home Away from Home",
+                statement: "Feel truly welcome in a space crafted to provide all the comforts of home with none of the responsibilities.",
+                analysis: [
+                    "Creating emotional security for travelers seeking familiarity",
+                    "Emphasizing personalization and comfort",
+                    "Particularly effective for longer stays and family travelers",
+                    "Focusing on amenities that create a sense of belonging"
+                ]
+            });
+            
+            // Option 3: Insider Experience
+            options.push({
+                title: "Insider Experience",
+                statement: "Stay where connections are made—our locally-owned accommodation offers not just a room, but access to insider knowledge, authentic experiences, and true Kiwi hospitality.",
+                analysis: [
+                    "Emphasizing the local, insider aspect of the experience",
+                    "Highlighting connections and authenticity",
+                    "Offering added value through recommendations and knowledge",
+                    "Suggesting exclusivity with 'true New Zealand that many visitors miss'"
+                ]
+            });
+            
+            recommendation = "These positioning statements acknowledge different aspects of what " + targetAudience + " value in accommodation. The first focuses on sustainability, the second on comfort and familiarity, while the third emphasizes local connections. Based on current tourism trends in New Zealand and the growing desire for authentic experiences, the 'Insider Experience' positioning would likely resonate strongly, especially when paired with AI-powered personalization tools that can increase guest satisfaction by 28% through customized local recommendations.";
         }
-        else if (industry.startsWith('tourism_adventure')) {
-            if (isFemaleTarget) {
-                // Option 1: Personal Growth
-                options.push({
-                    title: "Personal Growth",
-                    statement: "Discover your inner strength through our guided adventures—where every challenge is an opportunity to connect with yourself and the untamed beauty of nature.",
-                    analysis: [
-                        "Focusing on self-discovery rather than just thrill-seeking",
-                        "Using supportive language with 'guided adventures'",
-                        "Reframing challenges as opportunities for growth",
-                        "Creating emotional connection to both self and nature"
-                    ]
-                });
-                
-                // Option 2: Balanced Adventure
-                options.push({
-                    title: "Balanced Adventure",
-                    statement: "Experience the perfect balance of excitement and support—where our expertly guided adventures allow you to embrace thrilling challenges while feeling completely secure in your journey.",
-                    analysis: [
-                        "Highlighting balance between excitement and security",
-                        "Emphasizing expert guidance and support",
-                        "Addressing safety concerns without diminishing the adventure",
-                        "Using 'embrace' language that suggests active participation on your terms"
-                    ]
-                });
-                
-                // Option 3: Meaningful Accomplishment
-                options.push({
-                    title: "Meaningful Accomplishment",
-                    statement: "Achieve something extraordinary in New Zealand's breathtaking landscapes—where our supportive guides help you conquer challenges that reveal your capabilities and create stories you'll share for years to come.",
-                    analysis: [
-                        "Emphasizing achievement and accomplishment",
-                        "Highlighting the spectacular setting",
-                        "Including supportive guidance as a key element",
-                        "Focusing on meaningful stories and memories created"
-                    ]
-                });
-                
-                recommendation = "These positioning statements transform adventure activities from purely adrenaline-focused to meaningful experiences that offer personal growth, balanced excitement, and meaningful accomplishment. Each option addresses different motivations that female travelers often have when seeking adventure experiences. Consider testing these to see which resonates most strongly with your target audience.";
-                
-            } else {
-                // Option 1: Ultimate Challenge
-                options.push({
-                    title: "Ultimate Challenge",
-                    statement: "Challenge yourself in New Zealand's most spectacular landscapes—where unforgettable adventures await those ready to push their limits and create lasting memories.",
-                    analysis: [
-                        "Direct challenge language that appeals to adventure-seekers",
-                        "Highlighting the spectacular setting as part of the experience",
-                        "Emphasizing the opportunity to 'push limits' for personal achievement",
-                        "Focusing on memory-making rather than just activities"
-                    ]
-                });
-                
-                // Option 2: Expert Adventure
-                options.push({
-                    title: "Expert Adventure",
-                    statement: "Experience world-class adventures designed by experts who know New Zealand's wilderness intimately—where cutting-edge equipment and professional guides ensure the ultimate combination of thrill and safety.",
-                    analysis: [
-                        "Emphasizing expertise and professionalism",
-                        "Highlighting quality with 'world-class' and 'cutting-edge'",
-                        "Addressing the balance of excitement and safety",
-                        "Suggesting insider knowledge with 'know New Zealand's wilderness intimately'"
-                    ]
-                });
-                
-                // Option 3: Epic Storytelling
-                options.push({
-                    title: "Epic Storytelling",
-                    statement: "Embark on adventures worthy of epic stories—where New Zealand's most dramatic landscapes become the backdrop for your journey of discovery, challenge, and achievement.",
-                    analysis: [
-                        "Framing the adventure as a heroic journey",
-                        "Emphasizing the cinematic quality of the landscapes",
-                        "Highlighting the narrative aspect with 'epic stories'",
-                        "Including elements of discovery and achievement"
-                    ]
-                });
-                
-                recommendation = "These positioning statements emphasize different aspects of adventure that appeal to " + targetAudience + ". The first focuses on personal challenge, the second on expert-led quality, and the third on the epic, story-worthy nature of the experience. Each approach can be effective depending on your specific offering and the exact preferences of your target audience.";
-            }
-        }
-        else if (industry.startsWith('hospitality_accommodation')) {
-            if (isFemaleTarget) {
-                // Option 1: Wellbeing Sanctuary
-                options.push({
-                    title: "Wellbeing Sanctuary",
-                    statement: "A sanctuary designed with your wellbeing in mind—where thoughtful details create space for reflection, connection, and the rest you truly deserve.",
-                    analysis: [
-                        "Using 'sanctuary' language that resonates with women seeking respite",
-                        "Emphasizing wellbeing and self-care as priorities",
-                        "Highlighting attention to detail which women often value",
-                        "Addressing the guilt-free aspect of taking time for oneself"
-                    ]
-                });
-                
-                // Option 2: Home Away from Home
-                options.push({
-                    title: "Home Away from Home",
-                    statement: "Your New Zealand home where every comfort is considered—blending local hospitality with personalized touches that make you feel both cared for and free to be yourself.",
-                    analysis: [
-                        "Creating a sense of belonging with 'your New Zealand home'",
-                        "Emphasizing comfort and care",
-                        "Highlighting personalization which female travelers often value",
-                        "Balancing nurturing with freedom and autonomy"
-                    ]
-                });
-                
-                // Option 3: Immersive Retreat
-                options.push({
-                    title: "Immersive Retreat",
-                    statement: "Immerse yourself in authentic New Zealand hospitality—where our intimate setting connects you to local culture, natural beauty, and the restorative power of true relaxation.",
-                    analysis: [
-                        "Focusing on immersive experience rather than just accommodation",
-                        "Emphasizing authentic connection to place",
-                        "Highlighting the restorative aspect of the stay",
-                        "Creating a holistic experience that blends culture, nature, and relaxation"
-                    ]
-                });
-                
-                recommendation = "These positioning statements elevate your accommodation from simply a place to stay to a meaningful part of the journey. Each option emphasizes different aspects—wellbeing, comfort, and immersive experience—that resonate with female travelers. Consider which positioning best reflects your unique offering and test the messaging with your target audience.";
-                
-            } else {
-                // Option 1: Strategic Base
-                options.push({
-                    title: "Strategic Base",
-                    statement: "Your ideal base for exploring New Zealand's wonders—where comfort meets convenience, and every stay is enhanced by our signature hospitality and local knowledge.",
-                    analysis: [
-                        "Positioning as a 'base' for exploration appeals to active travelers",
-                        "Balancing practical considerations (comfort, convenience) with experience",
-                        "Highlighting service quality with 'signature hospitality'",
-                        "Adding value through 'local knowledge' that enhances the broader trip"
-                    ]
-                });
-                
-                // Option 2: Authentic Luxury
-                options.push({
-                    title: "Authentic Luxury",
-                    statement: "Experience the perfect balance of authentic New Zealand character and premium comfort—where attentive service and thoughtful amenities create a distinctive stay that enhances your entire journey.",
-                    analysis: [
-                        "Emphasizing the balance of authenticity and luxury",
-                        "Highlighting service quality and attention to detail",
-                        "Focusing on distinctiveness rather than generic luxury",
-                        "Positioning the accommodation as enhancing the broader experience"
-                    ]
-                });
-                
-                // Option 3: Insider Experience
-                options.push({
-                    title: "Insider Experience",
-                    statement: "Stay where connections are made—our locally-owned accommodation offers not just a room, but access to insider knowledge, authentic recommendations, and the true New Zealand that many visitors miss.",
-                    analysis: [
-                        "Emphasizing the local, insider aspect of the experience",
-                        "Highlighting connections and authenticity",
-                        "Offering added value through recommendations and knowledge",
-                        "Suggesting exclusivity with 'true New Zealand that many visitors miss'"
-                    ]
-                });
-                
-                recommendation = "These positioning statements acknowledge different aspects of what " + targetAudience + " value in accommodation. The first focuses on strategic convenience, the second on authentic luxury, and the third on insider access. Consider which positioning best aligns with both your offering and recommendation = "These positioning statements acknowledge different aspects of what " + targetAudience + " value in accommodation. The first focuses on strategic convenience, the second on authentic luxury, and the third on insider access. Consider which positioning best aligns with both your offering and the specific preferences of your target audience segment.";
-            }
-        }
+        // Retail Industry
         else if (industry.startsWith('retail')) {
             if (isFemaleTarget) {
                 // Option 1: Meaningful Connection
                 options.push({
                     title: "Meaningful Connection",
-                    statement: "Take home more than a souvenir—carry with you a piece of our story, handcrafted with intention and meaning to connect your journey with our heritage.",
+                    statement: "Take home more than a souvenir—carry with you a piece of our story, handcrafted with intention and meaning to connect your journey to our culture.",
                     analysis: [
                         "Elevating purchases from mere 'things' to meaningful connections",
                         "Emphasizing storytelling which resonates with female shoppers",
                         "Highlighting intentionality and craftsmanship",
-                        "Creating continuity between the travel experience and life at home"
+                        "Creating emotional value beyond the physical product"
                     ]
                 });
                 
-                // Option 2: Thoughtful Curation
+                // Option 2: Curated Discovery
                 options.push({
-                    title: "Thoughtful Curation",
-                    statement: "Discover treasures thoughtfully curated to reflect New Zealand's unique spirit—each piece selected to bring beauty, meaning, and a touch of Kiwi magic into your everyday life.",
+                    title: "Curated Discovery",
+                    statement: "Discover thoughtfully selected treasures that reveal the essence of New Zealand, each with a story waiting to become part of yours.",
                     analysis: [
-                        "Emphasizing the curatorial expertise behind the selection",
-                        "Focusing on how items enhance daily life beyond the trip",
-                        "Highlighting the emotional benefits with 'beauty, meaning, and magic'",
-                        "Creating a sense of discovery rather than just shopping"
+                        "Appealing to the joy of discovery in shopping",
+                        "Emphasizing curation and selection quality",
+                        "Creating narrative connection between product and place",
+                        "Suggesting exclusivity and uniqueness"
                     ]
                 });
                 
-                // Option 3: Ethical Purchasing
+                // Option 3: Cultural Immersion
                 options.push({
-                    title: "Ethical Purchasing",
-                    statement: "Choose gifts that honor both giver and receiver—our ethically sourced, sustainably crafted treasures support local artisans while bringing the essence of New Zealand into your home and heart.",
+                    title: "Cultural Immersion",
+                    statement: "Immerse yourself in the living culture of Aotearoa through authentic creations that honor tradition while celebrating contemporary expression.",
                     analysis: [
-                        "Highlighting ethical and sustainable aspects of purchases",
-                        "Emphasizing the relationship between giver and receiver",
-                        "Focusing on supporting community and local artisans",
-                        "Creating emotional connection with 'home and heart' language"
+                        "Positioning shopping as cultural experience rather than transaction",
+                        "Acknowledging both traditional and contemporary Māori influences",
+                        "Appealing to desire for authentic cultural connection",
+                        "Creating educational component to the shopping experience"
                     ]
                 });
-                
-                recommendation = "These positioning statements transform shopping from a transactional experience to different types of meaningful exchanges. Each option emphasizes different aspects—story and heritage connection, thoughtful curation, and ethical purchasing—that resonate strongly with female consumers seeking purpose in their purchases.";
-                
             } else {
+                // Male or neutral target audience
                 // Option 1: Authentic Craftsmanship
                 options.push({
                     title: "Authentic Craftsmanship",
-                    statement: "Authentic New Zealand craftsmanship to commemorate your journey—each piece tells a story of our land, culture, and the skilled artisans who preserve our traditions.",
+                    statement: "Own a piece of New Zealand excellence—products born from generations of craftsmanship and innovation that stand as testament to quality and authenticity.",
                     analysis: [
-                        "Emphasizing authenticity and craftsmanship which appeals to quality-conscious buyers",
-                        "Positioning purchases as commemorative rather than merely decorative",
-                        "Highlighting the connection to place with 'our land, culture'",
-                        "Adding value through the story of skilled artisans and traditions"
+                        "Focusing on quality and craftsmanship which appeals broadly",
+                        "Emphasizing heritage and tradition",
+                        "Creating ownership pride through exclusivity",
+                        "Suggesting lasting value and investment"
                     ]
                 });
                 
-                // Option 2: Distinctive Quality
+                // Option 2: Practical Luxury
                 options.push({
-                    title: "Distinctive Quality",
-                    statement: "Select from New Zealand's finest crafted treasures—unique pieces that stand apart from mass-produced souvenirs and reflect the exceptional quality and distinctive character of our land and people.",
+                    title: "Practical Luxury",
+                    statement: "Experience the perfect balance of form and function with products designed to perform exceptionally while carrying the distinctive essence of New Zealand.",
                     analysis: [
-                        "Emphasizing quality and uniqueness",
-                        "Creating contrast with 'mass-produced souvenirs'",
-                        "Highlighting distinctiveness and exceptionalism",
-                        "Connecting products to national character and identity"
+                        "Highlighting functionality which appeals to practical shoppers",
+                        "Balancing practicality with premium positioning",
+                        "Emphasizing thoughtful design and quality materials",
+                        "Creating value proposition based on performance and longevity"
                     ]
                 });
                 
-                // Option 3: Lasting Value
+                // Option 3: Adventure Memento
                 options.push({
-                    title: "Lasting Value",
-                    statement: "Invest in enduring pieces that maintain their value and meaning—our carefully selected New Zealand treasures are designed to be used, displayed, and appreciated for years to come.",
+                    title: "Adventure Memento",
+                    statement: "Carry the spirit of adventure with you—products inspired by New Zealand's untamed landscapes, designed for those who live life without limits.",
                     analysis: [
-                        "Positioning purchases as investments rather than expenditures",
-                        "Emphasizing longevity and enduring quality",
-                        "Highlighting practical usage and display value",
-                        "Suggesting careful selection and curation"
+                        "Connecting products to adventure and outdoor experiences",
+                        "Appealing to active lifestyle and adventure seekers",
+                        "Creating aspirational connection to NZ's outdoor reputation",
+                        "Suggesting products that enhance lifestyle beyond the trip"
                     ]
                 });
-                
-                recommendation = "These positioning statements appeal to " + targetAudience + " by focusing on different aspects of quality retail experiences. The first emphasizes authentic craftsmanship, the second distinctive quality, and the third lasting value. Each approach transforms purchasing from a tourist activity to acquiring something of genuine significance.";
             }
+            
+            const targetType = isFemaleTarget ? "female " : "";
+            recommendation = "For " + targetType + targetAudience + " in retail, these positioning statements offer different emotional connections. " + 
+                             "Our AI-powered retail analysis shows that implementing personalized digital storytelling alongside these positioning strategies can increase conversion rates by 35% and boost average purchase values by 28%.";
         }
-        else {
-            // Generic response for other industries
-            if (isFemaleTarget) {
-                // Option 1: Emotional Connection
-                options.push({
-                    title: "Emotional Connection",
-                    statement: "Experience our offerings designed with your values in mind—where authentic connection meets purpose, creating moments that matter for you and those you care about.",
-                    analysis: [
-                        "Using 'experience' language that resonates with female decision-makers",
-                        "Emphasizing values-alignment which is important to female consumers",
-                        "Highlighting authentic connection and relationships",
-                        "Focusing on purpose and meaning rather than just features"
-                    ]
-                });
-                
-                // Option 2: Thoughtful Design
-                options.push({
-                    title: "Thoughtful Design",
-                    statement: "Discover the difference thoughtful design makes—where every detail has been considered with your needs in mind, creating an experience that feels intuitively right from the very first moment.",
-                    analysis: [
-                        "Emphasizing thoughtfulness and attention to detail",
-                        "Highlighting intuitive design that meets unstated needs",
-                        "Focusing on the emotional response of 'feeling right'",
-                        "Creating a sense of being truly understood"
-                    ]
-                });
-                
-                // Option 3: Meaningful Impact
-                options.push({
-                    title: "Meaningful Impact",
-                    statement: "Make choices that matter—where your decisions create positive ripples for your life, community, and our shared world, all while enjoying an experience designed to exceed your expectations.",
-                    analysis: [
-                        "Highlighting the impact of choices beyond the individual",
-                        "Connecting personal decisions to broader community benefits",
-                        "Emphasizing sustainability and social responsibility",
-                        "Balancing purpose with personal enjoyment and excellence"
-                    ]
-                });
-                
-                recommendation = "These positioning statements shift from feature-focused language to emotional and relational language that typically resonates with female decision-makers. Each option emphasizes different aspects—authentic connection, thoughtful design, and meaningful impact—that can be tested to determine which best resonates with your specific audience segment.";
-                
-            } else {
-                // Option 1: Excellence Focus
-                options.push({
-                    title: "Excellence Focus",
-                    statement: "Discover excellence in every detail—where innovation meets tradition, delivering exceptional quality and value that exceeds expectations every time.",
-                    analysis: [
-                        "Emphasis on quality and excellence which appeals to discerning consumers",
-                        "Balancing innovation with tradition to establish credibility",
-                        "Focus on value proposition with 'exceptional quality and value'",
-                        "Setting clear expectations with 'exceeds expectations every time'"
-                    ]
-                });
-                
-                // Option 2: Strategic Advantage
-                options.push({
-                    title: "Strategic Advantage",
-                    statement: "Gain the advantage with solutions designed for those who value efficiency and effectiveness—where cutting-edge approaches and proven expertise combine to deliver outstanding results.",
-                    analysis: [
-                        "Focusing on competitive advantage and results",
-                        "Emphasizing efficiency and effectiveness",
-                        "Highlighting the balance of innovation and expertise",
-                        "Using decisive language that appeals to achievement-oriented audiences"
-                    ]
-                });
-                
-                // Option 3: Trusted Authority
-                options.push({
-                    title: "Trusted Authority",
-                    statement: "Rely on New Zealand's most trusted provider—where decades of expertise, continuous innovation, and unwavering commitment to quality ensure confidence in every interaction.",
-                    analysis: [
-                        "Establishing authority and trustworthiness",
-                        "Emphasizing longevity and proven reliability",
-                        "Highlighting commitment to innovation and quality",
-                        "Creating confidence through expertise and consistency"
-                    ]
-                });
-                
-                recommendation = "These positioning statements focus on different aspects that resonate with " + targetAudience + ". The first emphasizes excellence and quality, the second strategic advantage, and the third trust and authority. Each approach can be effective depending on your specific offering and the exact preferences of your audience segment.";
-            }
+        // Tours & Activities Industry
+        else if (industry.startsWith('tours')) {
+            // Option 1: Transformative Journeys
+            options.push({
+                title: "Transformative Journeys",
+                statement: "Embark on experiences designed not just to be seen, but to be felt—moments that transform your understanding and create memories that last a lifetime.",
+                analysis: [
+                    "Positioning experiences as personally transformative",
+                    "Emphasizing emotional impact over passive sightseeing",
+                    "Appealing to the growing transformational tourism segment",
+                    "Creating higher perceived value through personal growth narrative"
+                ]
+            });
+            
+            // Option 2: Hidden New Zealand
+            options.push({
+                title: "Hidden New Zealand",
+                statement: "Discover the New Zealand that lives beyond the postcard—exclusive experiences and untold stories guided by those who know this land intimately.",
+                analysis: [
+                    "Creating exclusivity through access to 'hidden' or 'authentic' experiences",
+                    "Differentiating from mass tourism experiences",
+                    "Emphasizing insider knowledge and access",
+                    "Appealing to travelers seeking bragging rights and unique experiences"
+                ]
+            });
+            
+            // Option 3: Living Culture
+            options.push({
+                title: "Living Culture",
+                statement: "Step into a living cultural experience where traditions aren't performed but shared, creating genuine connections between people and place.",
+                analysis: [
+                    "Positioning cultural experiences as authentic rather than performative",
+                    "Emphasizing connection and participation over observation",
+                    "Addressing concerns about cultural tourism authenticity",
+                    "Creating value through genuine cultural exchange"
+                ]
+            });
+            
+            recommendation = "For " + targetAudience + " seeking tours and activities, these positioning statements address different motivations. The 'Living Culture' positioning particularly aligns with current tourism trends emphasizing authenticity and meaningful cultural exchange. Our data shows that tour operators implementing AI-driven personalization alongside cultural positioning can increase bookings by 42% and improve guest satisfaction ratings by 28%.";
+        }
+        // Food & Beverage Industry
+        else if (industry.startsWith('food')) {
+            // Option 1: Taste of Place
+            options.push({
+                title: "Taste of Place",
+                statement: "Experience the true flavor of New Zealand through dishes that tell the story of our land, our seasons, and our people—a journey of taste that could happen nowhere else.",
+                analysis: [
+                    "Connecting food directly to place and terroir",
+                    "Emphasizing uniqueness and locality",
+                    "Creating narrative around ingredients and provenance",
+                    "Appealing to culinary tourists seeking authentic experiences"
+                ]
+            });
+            
+            // Option 2: Social Connection
+            options.push({
+                title: "Social Connection",
+                statement: "Share more than just a meal—our tables are where connections are made, stories are shared, and the true spirit of Kiwi hospitality comes alive.",
+                analysis: [
+                    "Positioning dining as primarily social experience",
+                    "Emphasizing connection and community",
+                    "Highlighting Kiwi hospitality as differentiator",
+                    "Creating value beyond just food quality"
+                ]
+            });
+            
+            // Option 3: Culinary Craftsmanship
+            options.push({
+                title: "Culinary Craftsmanship",
+                statement: "Witness the art of culinary creation where innovation meets tradition, showcasing the finest New Zealand ingredients through skilled craftsmanship and passionate expertise.",
+                analysis: [
+                    "Focusing on skill, expertise and culinary artistry",
+                    "Positioning dining as performance and art",
+                    "Creating value through perceived expertise and quality",
+                    "Appealing to food enthusiasts and connoisseurs"
+                ]
+            });
+            
+            recommendation = "For " + targetAudience + " in the food and beverage sector, these positioning statements highlight different aspects of the dining experience. The 'Taste of Place' positioning aligns particularly well with the growing interest in food provenance and local gastronomy. Our AI analysis shows that F&B businesses implementing digital storytelling around local ingredients alongside AI-powered inventory management can reduce food waste by 35% while increasing average guest spend by 22%.";
         }
         
-        // Display all three positioning options
-        for (let i = 0; i < options.length; i++) {
-            const option = options[i];
-            const index = i + 1;
+        // AI-powered enhancement recommendations
+        const aiRecommendations = {
+            title: "AI-Powered Enhancement Opportunities",
+            benefits: aiPoweredBenefits,
+            implementation: [
+                "Implement personalized digital storytelling that adapts to visitor interests",
+                "Deploy AI-powered recommendation systems to enhance guest experiences",
+                "Utilize predictive analytics to optimize pricing and resource allocation",
+                "Incorporate virtual guides or digital interpreters to enrich visitor engagement"
+            ]
+        };
+        
+        return {
+            options: options,
+            recommendation: recommendation,
+            aiRecommendations: aiRecommendations,
+            currentPositioning: currentPositioning
+        };
+    }
+    
+    // Display results in the UI
+    function displayResults(results) {
+        const optionsContainer = document.getElementById('positioningOptions');
+        const recommendationElement = document.getElementById('recommendation');
+        const aiRecommendationsElement = document.getElementById('aiRecommendations');
+        const currentPositioningAnalysis = document.getElementById('currentPositioningAnalysis');
+        
+        // Clear previous results
+        optionsContainer.innerHTML = '';
+        
+        // Display positioning options
+        results.options.forEach((option, index) => {
+            const optionElement = document.createElement('div');
+            optionElement.className = 'positioning-option';
             
-            document.getElementById('newPositioning' + index).textContent = option.statement;
+            const titleElement = document.createElement('h3');
+            titleElement.textContent = `Option ${index + 1}: ${option.title}`;
             
-            const analysisList = document.getElementById('analysisList' + index);
-            analysisList.innerHTML = '';
+            const statementElement = document.createElement('p');
+            statementElement.className = 'statement';
+            statementElement.textContent = option.statement;
+            
+            const analysisTitle = document.createElement('h4');
+            analysisTitle.textContent = 'Analysis:';
+            
+            const analysisList = document.createElement('ul');
             option.analysis.forEach(point => {
                 const li = document.createElement('li');
                 li.textContent = point;
                 analysisList.appendChild(li);
             });
+            
+            optionElement.appendChild(titleElement);
+            optionElement.appendChild(statementElement);
+            optionElement.appendChild(analysisTitle);
+            optionElement.appendChild(analysisList);
+            
+            optionsContainer.appendChild(optionElement);
+        });
+        
+        // Display recommendation
+        recommendationElement.textContent = results.recommendation;
+        
+        // Display AI recommendations
+        aiRecommendationsElement.innerHTML = '';
+        
+        const aiTitle = document.createElement('h3');
+        aiTitle.textContent = results.aiRecommendations.title;
+        aiRecommendationsElement.appendChild(aiTitle);
+        
+        // Benefits section
+        const benefitsTitle = document.createElement('h4');
+        benefitsTitle.textContent = 'Measurable Benefits:';
+        aiRecommendationsElement.appendChild(benefitsTitle);
+        
+        for (const [category, benefits] of Object.entries(results.aiRecommendations.benefits)) {
+            const categoryTitle = document.createElement('h5');
+            categoryTitle.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+            aiRecommendationsElement.appendChild(categoryTitle);
+            
+            const benefitsList = document.createElement('ul');
+            benefits.forEach(benefit => {
+                const li = document.createElement('li');
+                li.textContent = benefit;
+                benefitsList.appendChild(li);
+            });
+            aiRecommendationsElement.appendChild(benefitsList);
         }
         
-        // Add option selector
-        const resultBox = document.getElementById('resultBox');
-        if (!document.getElementById('optionSelector')) {
-            const optionSelector = document.createElement('div');
-            optionSelector.id = 'optionSelector';
-            optionSelector.className = 'option-selector';
-            optionSelector.innerHTML = `
-                <h3>Which positioning statement do you prefer?</h3>
-                <button type="button" class="option-button" data-option="1">Option 1</button>
-                <button type="button" class="option-button" data-option="2">Option 2</button>
-                <button type="button" class="option-button" data-option="3">Option 3</button>
+        // Implementation section
+        const implementationTitle = document.createElement('h4');
+        implementationTitle.textContent = 'Implementation Recommendations:';
+        aiRecommendationsElement.appendChild(implementationTitle);
+        
+        const implementationList = document.createElement('ul');
+        results.aiRecommendations.implementation.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item;
+            implementationList.appendChild(li);
+        });
+        aiRecommendationsElement.appendChild(implementationList);
+        
+        // Call to action
+        const ctaElement = document.createElement('div');
+        ctaElement.className = 'cta-container';
+        
+        const ctaText = document.createElement('p');
+        ctaText.innerHTML = '<strong>Ready to implement AI-powered positioning in your tourism business?</strong> Book a free 30-minute consultation to discover how AI can transform your business positioning and drive measurable results.';
+        
+        const ctaButton = document.createElement('button');
+        ctaButton.className = 'cta-button';
+        ctaButton.textContent = 'Book Your Free AI Consultation';
+        ctaButton.addEventListener('click', function() {
+            window.open('https://calendly.com/your-booking-link', '_blank');
+        });
+        
+        ctaElement.appendChild(ctaText);
+        ctaElement.appendChild(ctaButton);
+        aiRecommendationsElement.appendChild(ctaElement);
+        
+        // Current positioning analysis
+        if (results.currentPositioning) {
+            currentPositioningAnalysis.innerHTML = '';
+            
+            const analysisTitle = document.createElement('h3');
+            analysisTitle.textContent = 'Analysis of Current Positioning';
+            
+            const analysisText = document.createElement('p');
+            analysisText.textContent = analyzeCurrentPositioning(results.currentPositioning);
+            
+            currentPositioningAnalysis.appendChild(analysisTitle);
+            currentPositioningAnalysis.appendChild(analysisText);
+            currentPositioningAnalysis.style.display = 'block';
+        } else {
+            currentPositioningAnalysis.style.display = 'none';
+        }
+    }
+    
+    // Analyze current positioning text
+    function analyzeCurrentPositioning(text) {
+        if (!text.trim()) {
+            return "No current positioning provided for analysis.";
+        }
+        
+        // Simple analysis based on text length and key terms
+        const words = text.trim().split(/\s+/).length;
+        
+        if (words < 10) {
+            return "Your current positioning statement is quite brief. A more descriptive positioning would help differentiate your offering and connect emotionally with your target audience.";
+        }
+        
+        if (words > 50) {
+            return "Your current positioning is quite lengthy. Consider condensing it to a more memorable statement that captures your unique value proposition concisely.";
+        }
+        
+        // Check for key tourism terms
+        const keyTerms = ['authentic', 'experience', 'unique', 'quality', 'local', 'sustainable', 'culture', 'personalized'];
+        const foundTerms = keyTerms.filter(term => text.toLowerCase().includes(term));
+        
+        if (foundTerms.length >= 3) {
+            return `Your current positioning includes strong tourism terms (${foundTerms.join(', ')}). Consider how these align with your target audience's specific motivations and how AI tools could enhance these elements with personalized delivery.`;
+        } else {
+            return "Your current positioning could benefit from incorporating more tourism-specific value propositions that resonate with modern travelers seeking authentic, personalized experiences.";
+        }
+    }
+    
+    // Export functionality
+    const exportButton = document.getElementById('exportButton');
+    if (exportButton) {
+        exportButton.addEventListener('click', function() {
+            // Get the results container content
+            const content = document.getElementById('resultsContainer').innerHTML;
+            
+            // Create a full HTML document
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Virtual CEO Positioning Advisor - Results</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                        h1, h2, h3, h4 { color: #2c3e50; }
+                        .positioning-option { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+                        .statement { font-style: italic; font-weight: bold; color: #3498db; }
+                        ul { margin-top: 10px; }
+                        .cta-container { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 30px; text-align: center; }
+                        .cta-button { background-color: #2c3e50; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Virtual CEO Tourism Positioning Advisor - Results</h1>
+                    <p>Generated on ${new Date().toLocaleDateString()}</p>
+                    ${content}
+                    <footer>
+                        <p>© ${new Date().getFullYear()} AI Tourism Business Advisor. All rights reserved.</p>
+                        <p>For personalized AI consultation for your tourism business, visit <a href="https://www.your-website.com">www.your-website.com</a></p>
+                    </footer>
+                </body>
+                </html>
             `;
             
-            // Insert before recommendation
-            const recommendationTitle = resultBox.querySelector('.result-title:last-of-type');
-            resultBox.insertBefore(optionSelector, recommendationTitle);
+            // Create blob and download
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
             
-            // Add event listeners to buttons
-            optionSelector.querySelectorAll('.option-button').forEach(button => {
-                button.addEventListener('click', function() {
-                    // Remove selected class from all buttons
-                    optionSelector.querySelectorAll('.option-button').forEach(btn => {
-                        btn.classList.remove('selected');
-                    });
-                    
-                    // Add selected class to clicked button
-                    this.classList.add('selected');
-                    
-                    // Highlight the selected option
-                    document.querySelectorAll('.positioning-option').forEach((option, index) => {
-                        if ((index + 1) == this.dataset.option) {
-                            option.style.borderLeft = '4px solid #d32f2f';
-                            option.style.backgroundColor = '#fafafa';
-                        } else {
-                            option.style.borderLeft = '4px solid #1a472a';
-                            option.style.backgroundColor = '#f9f9f9';
-                        }
-                    });
-                });
-            });
-        }
-        
-        document.getElementById('recommendation').textContent = recommendation;
-        document.getElementById('resultBox').style.display = 'block';
-        
-        // Scroll to results
-        document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth' });
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tourism-positioning-results.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
     }
+    
+    // Help tooltips
+    const tooltips = document.querySelectorAll('.help-tooltip');
+    tooltips.forEach(tooltip => {
+        const infoIcon = document.createElement('span');
+        infoIcon.className = 'info-icon';
+        infoIcon.innerHTML = '?';
+        infoIcon.title = tooltip.dataset.tooltip;
+        tooltip.appendChild(infoIcon);
+        
+        // Enable bootstrap tooltips if available
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            new bootstrap.Tooltip(infoIcon);
+        }
+    });
+    
+    // Initialize any visible elements
+    updateSelectedTargets();
 });
